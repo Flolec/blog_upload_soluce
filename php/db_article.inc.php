@@ -29,16 +29,16 @@ class ArticleRepository
      * Récupère tous les articles depuis la base de données.
      *
      * @param string &$message Référence à une variable de message d'état
-     * @return  objet de type PDOStatement | Tableau vide
+     * @return  array Tableau vide | tableau peuplé d'objets  \Blog\Article
      */
-    public function getAllArticles(&$message)
+    public function getAllArticles(string &$message): array
     {
-        $result = array();
+        $result = [];
         $bdd = null;
         try {
             $bdd = DBLink::connect2db(MYDB, $message);
             if (!$bdd) return $result;
-            $stmt  = $bdd->query("SELECT * FROM " . self::TABLE_NAME . " order by id", PDO::FETCH_CLASS, "Blog\Article");
+            $stmt  = $bdd->query("SELECT * FROM " . self::TABLE_NAME . " order by id", PDO::FETCH_CLASS,  \Blog\Article::class);
             $result = $stmt->fetchAll();
         } catch (\Exception $e) {
             $message .= $e->getMessage() . '<br>';
@@ -48,19 +48,25 @@ class ArticleRepository
         return $result;
     }
 
+    /**
+     * Récupère un article à partir de son identifiant.
+     *
+     * @param int $id Identifiant de l'article
+     * @param string &$message Référence à une variable de message d'état
+     * @return \Blog\Article|null Article trouvé ou null si non trouvé
+     */
 
-
-    public function getArticleById($id, &$message)
+    public function getArticleById(int $id, string &$message): ?\Blog\Article
     {
-        $result = array();
+        $result = null;
         $bdd    = null;
         try {
             $bdd  = DBLink::connect2db(MYDB, $message);
             if (!$bdd) return $result;
             $stmt = $bdd->prepare("SELECT * FROM " . self::TABLE_NAME . " WHERE id = :id_article");
-            $stmt->bindValue(':id_article', $id);
+            $stmt->bindValue(':id_article', $id, \PDO::PARAM_INT);
             if ($stmt->execute()) {
-                $obj = $stmt->fetchObject('Blog\Article');
+                $obj = $stmt->fetchObject(\Blog\Article::class);
                 $result = ($obj !== false ? $obj : null);
             } else {
                 $message .= 'Une erreur système est survenue.<br> 
@@ -80,12 +86,11 @@ class ArticleRepository
     /**
      * Insère un nouvel article dans la base de données.
      *
-     * @param Article $article Objet représentant l'article à insérer (doit contenir `titre` et `contenu`).
+     * @param \Blog\Article $article Objet représentant l'article à insérer (doit contenir `titre` et `contenu`)
      * @param string &$message Référence à une variable de message d'état
-     * @return bool Retourne `true` si l'insertion est réussie, sinon `false`.
-     *
+     * @return bool Retourne `true` si l'insertion est réussie, sinon `false`
      */
-    public function insertArticle($article, &$message)
+    public function insertArticle(\Blog\Article $article, string &$message): bool
     {
         $noError = false;
         $bdd   = null;
@@ -116,10 +121,9 @@ class ArticleRepository
      *
      * @param String $id Identifiant de l'article à supprimer
      * @param string &$message Référence à une variable de message d'état
-     * @return bool Retourne `true` si l'insertion est réussie, sinon `false`.
-     *
+     * @return bool Retourne `true` si la suppression est réussie, sinon `false`     *
      */
-    public static function deleteArticle($id, &$message)
+    public static function deleteArticle(int $id, string &$message): bool
     {
         $noError = false;
         $bdd   = null;
@@ -143,14 +147,13 @@ class ArticleRepository
         return $noError;
     }
     /**
-     * Modifie un article
+     * Modifie un article existant dans la base de données.
      *
-     * @param String $id Identifiant de l'article à modifier
+     * @param \Blog\Article $article Objet article à modifier (doit contenir `id`, `titre`, `contenu`)
      * @param string &$message Référence à une variable de message d'état
-     * @return bool Retourne `true` si la modification est réussie, sinon `false`.
-     *
+     * @return bool Retourne `true` si la modification est réussie, sinon `false`
      */
-    public static function updateArticle($article, &$message)
+    public static function updateArticle(\Blog\Article $article, string &$message): bool
     {
         $noError = false;
         $bdd   = null;
